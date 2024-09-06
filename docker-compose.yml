@@ -13,7 +13,7 @@ services:
       - redis
       - jaeger
     volumes:
-      # shared volume between worker and api for media
+      # Shared volume between worker and api for media
       - saleor-media:/app/media
     env_file:
       - common.env
@@ -22,12 +22,40 @@ services:
       - JAEGER_AGENT_HOST=jaeger
       - DASHBOARD_URL=http://localhost:9000/
       - ALLOWED_HOSTS=localhost,api
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'       # Maximum 50% of CPU
+          memory: '512M'     # Maximum 512MB of RAM
+        reservations:
+          cpus: '0.25'       # Reserve 25% of CPU
+          memory: '256M'     # Reserve 256MB of RAM
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   dashboard:
     image: ghcr.io/saleor/saleor-dashboard:latest
     ports:
       - 9002:80
     restart: unless-stopped
+    networks:
+      - saleor-backend-tier
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'       # Maximum 25% of CPU
+          memory: '256M'     # Maximum 256MB of RAM
+        reservations:
+          cpus: '0.10'       # Reserve 10% of CPU
+          memory: '128M'     # Reserve 128MB of RAM
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: library/postgres:15-alpine
@@ -42,6 +70,11 @@ services:
     environment:
       - POSTGRES_USER=saleor
       - POSTGRES_PASSWORD=saleor
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'       # Limit for the database
+          memory: '512M'     # Maximum 512MB of RAM
 
   redis:
     image: library/redis:7.0-alpine
@@ -52,6 +85,11 @@ services:
       - saleor-backend-tier
     volumes:
       - saleor-redis:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'       # Redis resource limit
+          memory: '128M'     # Maximum 128MB of RAM
 
   worker:
     image: ghcr.io/saleor/saleor:3.20
@@ -66,8 +104,13 @@ services:
       - redis
       - mailpit
     volumes:
-      # shared volume between worker and api for media
+      # Shared volume between worker and api for media
       - saleor-media:/app/media
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'       # Limit for worker
+          memory: '512M'     # Maximum 256MB of RAM
 
   jaeger:
     image: jaegertracing/all-in-one
@@ -85,6 +128,11 @@ services:
     volumes:
       - type: tmpfs
         target: /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: '128M'
 
   mailpit:
     image: axllent/mailpit
@@ -94,6 +142,11 @@ services:
     restart: unless-stopped
     networks:
       - saleor-backend-tier
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: '64M'
 
 volumes:
   saleor-db:

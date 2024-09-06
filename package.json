@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@adobe/css-tools": "^4.3.2",
+    "@editorjs/editorjs": "^2.26.0",
+    "braces": "^3.0.3",
+    "ip": "^2.0.1",
+    "micromatch": "^4.0.8",
+    "ws": "^8.17.1"
+  }
+}
